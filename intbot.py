@@ -100,27 +100,55 @@ async def joingame(ctx: SlashContext):
             await active_game.replace(active_game)
             await ctx.send("Du bist dem Spiel beigetreten.", ephemeral=True)
 
-
+async def get_all_active_members_names():
+    active_game = await Games.find_one({"game_running": 1})
+    members = active_game.members
+    return members
 
 @slash_command(name="startgame", description="start the game")
 async def startgame(ctx: SlashContext):
-    game_number = "game nummer" # Später aus DB Abragen
+    game_members_ids = await get_all_active_members_names()
+    
+    game_members = []
+    for player in game_members_ids:
+        p = await Players.find_one({"discord_id" : player})
+        name = p.name
+        print(f"Gefunden: " + name)
+        game_members.append(name)
 
-    embed_msg = Embed(
-        title = f"Game {game_number}",
-        description= "## Variation 1:\n**Team1:*** p1,p2,p3,p4,p5\n**Team2:**p6,7,8,9,10...",
-        color=0x00ff00
-    )
-    components = [
-        StringSelectMenu("Variation 1", "Variation 2", placeholder="Variation:", min_values=1, max_values=1),
-    ]
+    print(len(game_members))
 
-    await ctx.send(embed=embed_msg, components=components)
+    game_info = Embed(title="Neues Spiel")
+    game_info.set_thumbnail("https://upload.wikimedia.org/wikipedia/commons/1/1a/Faker_2020_interview.jpg")
+    
+    clear_names = " ,".join(game_members)
+
+
+    game_info.description = f"{clear_names}"
+    
+    await ctx.send(embed=game_info)
+
+    # components = [
+    #     StringSelectMenu("Variation 1", "Variation 2", placeholder="Variation:", min_values=1, max_values=1),
+    # ]
+
+    # await ctx.send(embed=members, components=components)
 
     # Je nach auswahl Runde Starten mit den Verschiedenen Teams
     # Neuer Post mit dem Finalen Team
     # User in die jeweiligen Channel moven
 
+@slash_command(name="test", description="test")
+async def test(ctx: SlashContext):
+    embed = Embed(title="Ich bin ein Embed")
+    embed.description = "Hier können afaik 4000 Zeichen drin stehen"
+    embed.set_thumbnail("https://upload.wikimedia.org/wikipedia/commons/1/1a/Faker_2020_interview.jpg")
+
+    embed.add_field(name="field1", value="value1", inline=True)
+    embed.add_field(name="field2", value="value2", inline=True)
+    embed.add_field(name="field3", value="value3", inline=True)
+
+    await ctx.send(embed=embed)
 
 @listen()  # this decorator tells snek that it needs to listen for the corresponding event, and run this coroutine
 async def on_ready():
